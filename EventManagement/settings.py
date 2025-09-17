@@ -25,8 +25,8 @@ SECRET_KEY = 'django-insecure-iq_nqf5ja6$@n9c-ghtd(+8-_c63ahsdlxj2nlx)p^tv2aqg)h
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# ALLOWED_HOSTS = ['events.deepanwita.fun']
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['events.deepanwita.fun']
+# ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -168,3 +168,4 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated'
     ]
 }
+
