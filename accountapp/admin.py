@@ -24,6 +24,11 @@ class UserTokenAdmin(admin.ModelAdmin):
         'id','user','token'
     ]
 
+@admin.register(MyProfile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display=[
+        "id","gender","is_approved"
+    ]
 
 
 

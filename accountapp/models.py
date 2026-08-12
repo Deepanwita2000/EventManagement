@@ -72,8 +72,14 @@ class MyProfile(BaseModel): # organizer's profile
     # created_at = models.DateTimeField(auto_now_add=True)
     # updated_at = models.DateTimeField(auto_now=True)
     # organizer= models.ForeignKey(User , on_delete=models.CASCADE , related_name='profile') # organizer
-
+    
     def __str__(self):
         return f"{self.created_by.email}-{self.gender}"
     
-  
+    class Meta:
+            constraints = [
+                models.UniqueConstraint(
+                    fields=["created_by"],
+                    name="unique_profile_per_user"
+                )
+            ]

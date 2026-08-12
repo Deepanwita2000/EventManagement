@@ -2,7 +2,7 @@
 from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework import exceptions
+from rest_framework import exceptions, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import PermissionDenied
@@ -13,10 +13,11 @@ from django.utils import timezone
 from datetime import timedelta
 
 from accountapp.authentication import JWTAuthentication, create_access_token, create_refresh_token
-from accountapp.models import  User, UserToken
+from accountapp.models import  MyProfile, User, UserToken
 
 from accountapp.permission import  IsOrganizer , IsOrganizerOrUser
-from accountapp.serializers import UserSerializer
+from accountapp.serializers import ProfileSerializer, UserSerializer
+from eventapp.views import BaseClass
   
 
 class RegisterAPIView(APIView):
@@ -124,6 +125,63 @@ class LogoutAPIView(APIView):
 
         response.delete_cookie(key='refresh_token')
         return response
+
+
+class ProfileCreateView(BaseClass):
+
+    # permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        if MyProfile.objects.filter(created_by=request.user).exists():
+            return Response(
+                {"detail": "You have already created a profile."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = ProfileSerializer(data=request.data)
+
+        if serializer.is_valid():
+            profile = serializer.save(created_by=request.user)
+
+            return Response(
+                ProfileSerializer(
+                    profile,
+                    context={"request": request}
+                ).data,
+                status=status.HTTP_201_CREATED
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    def list(self, request):
+        user = request.user
+
+        try:
+            myprofile = MyProfile.objects.select_related("created_by").filter(created_by=user).first()
+        except MyProfile.DoesNotExist:
+            return Response(
+                {"detail": "Profile not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = ProfileSerializer(
+            myprofile,
+            context={"request": request}
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
+
+
+
+
+
+
 
 
 # class ProfileViewSet(ModelViewSet):
