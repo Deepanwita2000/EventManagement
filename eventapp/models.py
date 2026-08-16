@@ -88,6 +88,7 @@ class Event(BaseModel):
     age = models.CharField(max_length=30)
     organization = models.CharField(max_length=225)
     is_popular = models.BooleanField(default=False)
+    public_count = models.IntegerField(default=0)
     status = models.CharField(max_length=10, default="active")
     category = models.ForeignKey(Category,on_delete=models.CASCADE,related_name="events")
 

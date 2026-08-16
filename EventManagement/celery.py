@@ -25,4 +25,12 @@ app.conf.beat_schedule = {
         "task": "logicapp.tasks.expire_bookings",
          "schedule": crontab(minute="*/1")
     },
+    "update-popular-events-every-5-minutes": {
+        "task": "eventapp.tasks.update_popular_events",
+        "schedule": crontab(minute="*/5"),
+    },
+    "update-expired-events-every-5-minutes": {
+        "task": "eventapp.tasks.update_expired_events",
+        "schedule": 300.0,  # Every 5 minutes
+    },
 }

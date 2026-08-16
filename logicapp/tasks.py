@@ -1,11 +1,10 @@
 # tasks.py
-
 from celery import shared_task
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
 from django.db import transaction
-from logicapp.models import Booking, EventTicket
+from logicapp.models import Booking, EventTicket,Event
 
 
 
@@ -13,6 +12,7 @@ from logicapp.models import Booking, EventTicket
 
 @shared_task
 def send_booking_failed_email(user_email, first_name, event_title):
+    print("send_booking_failed_email()......")
     subject = "Booking Expired"
     print(subject)
 
@@ -31,6 +31,9 @@ Regards,
 Event Management Team
 """
     print(message)
+    print("EMAIL_HOST_USER:", settings.EMAIL_HOST_USER)
+    print("DEFAULT_FROM_EMAIL:", settings.DEFAULT_FROM_EMAIL)
+    print("Sending to:", user_email)
     
 
     send_mail(
@@ -78,6 +81,7 @@ def send_booking_confirmation_email(
     seats,
     amount,
 ):
+    print("send_booking_confirmation_email()....")
     subject = "Booking Reserved"
     print(subject)
 
@@ -125,6 +129,7 @@ def send_payment_success_email(
     seats,
     amount,
 ):
+    print("send_payment_success_email()....")
     subject = "Payment Successful"
     print(subject)
 
@@ -189,6 +194,7 @@ from django.conf import settings
 
 @shared_task
 def generate_ticket(booking_id):
+    print("generate_ticket()....")
 
     booking = Booking.objects.select_related(
         "event",
@@ -202,6 +208,12 @@ def generate_ticket(booking_id):
         booking=booking,
         ticket_number=ticket_number,
     )
+
+    # update public_count udner Event model
+    event=booking.event
+    event.public_count += booking.selected_seats
+    event.save(update_fields=["public_count"])
+
 
     pdf_buffer = BytesIO()
 

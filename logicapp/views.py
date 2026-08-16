@@ -162,9 +162,7 @@ class BookingViewSet(BaseClass):
             raise ValidationError("selected_seats must be an integer.")
 
         if selected_seats <= 0:
-            raise ValidationError(
-                "selected_seats must be greater than zero."
-            )
+            raise ValidationError("selected_seats must be greater than zero.")
 
         try:
             event = Event.objects.get(id=event_id, is_active=True)
@@ -182,7 +180,6 @@ class BookingViewSet(BaseClass):
                 "Selected ticket does not belong to this event."
             )
         with transaction.atomic():
-
             if ticket.event != event:
                 raise ValidationError(
                     "Selected ticket does not belong to this event."
@@ -222,7 +219,6 @@ class BookingViewSet(BaseClass):
                 amount=amount,
                 created_by=user,
                 expires_at=expires_at
-
             )
             send_booking_confirmation_email.delay(
                                                 user.email,
@@ -273,7 +269,31 @@ class BookingViewSet(BaseClass):
 
 
 
+def test_success(booking_id,user):
+        """
+        POST /logic/payment/test_success/
+        {
+        "booking_id": 10
+        }
 
+        """
+
+        booking = get_object_or_404(
+            Booking,
+            id=booking_id,
+            created_by=user,
+            payment_status="reserved"
+        )
+
+        booking.payment_status = "paid"
+        booking.razorpay_payment_id = "pay_test_12345"
+        booking.razorpay_signature = "signature_test"
+        booking.updated_by = user
+        booking.save()
+        print("generate_ticket")
+        generate_ticket.delay(booking.id)
+        msg="Payment Successful, ticket sent to ur email!!"
+        return msg
 
 
 class MakePayment(BaseClass):
@@ -314,54 +334,58 @@ class MakePayment(BaseClass):
 
         booking.razorpay_order_id = order["id"]
         booking.save(update_fields=["razorpay_order_id"])
+        msg=test_success(booking_id,user)
 
         return Response({
             "message": "Order created successfully.",
             "booking_id": booking.id,
             "order_id": order["id"],
             "amount": order["amount"],
-            "currency": order["currency"]
+            "currency": order["currency"],
+            "message":msg
         })
 
 
 
-    @action(detail=False, methods=["post"])
-    def test_success(self, request):
-        """
-        POST /logic/payment/test_success/
-        {
-        "booking_id": 10
-        }
+      
 
-        """
+    # @action(detail=False, methods=["post"])
+    # def test_success(self, request):
+    #     """
+    #     POST /logic/payment/test_success/
+    #     {
+    #     "booking_id": 10
+    #     }
 
-        booking = get_object_or_404(
-            Booking,
-            id=request.data["booking_id"],
-            created_by=request.user,
-            payment_status="reserved"
-        )
+    #     """
 
-        booking.payment_status = "paid"
-        booking.razorpay_payment_id = "pay_test_12345"
-        booking.razorpay_signature = "signature_test"
-        booking.updated_by = request.user
-        booking.save()
-        print("generate_ticket")
-        generate_ticket.delay(booking.id)
+    #     booking = get_object_or_404(
+    #         Booking,
+    #         id=request.data["booking_id"],
+    #         created_by=request.user,
+    #         payment_status="reserved"
+    #     )
 
-        # send_payment_success_email.delay(
-        #     booking.created_by.email,
-        #     booking.created_by.first_name,
-        #     booking.event.title,
-        #     booking.ticket.name,
-        #     booking.selected_seats,
-        #     str(booking.amount),
-        # )
+    #     booking.payment_status = "paid"
+    #     booking.razorpay_payment_id = "pay_test_12345"
+    #     booking.razorpay_signature = "signature_test"
+    #     booking.updated_by = request.user
+    #     booking.save()
+    #     print("generate_ticket")
+    #     generate_ticket.delay(booking.id)
 
-        return Response({
-            "message": "Payment Successful, ticket sent to ur email!!"
-        })
+    #     # send_payment_success_email.delay(
+    #     #     booking.created_by.email,
+    #     #     booking.created_by.first_name,
+    #     #     booking.event.title,
+    #     #     booking.ticket.name,
+    #     #     booking.selected_seats,
+    #     #     str(booking.amount),
+    #     # )
+
+    #     return Response({
+    #         "message": "Payment Successful, ticket sent to ur email!!"
+    #     })
 
 
 
@@ -388,106 +412,106 @@ class MakePayment(BaseClass):
 
 # class PaymentPage(ViewSet):
 
-def retrieve(request, pk=None):
-        print(pk)
+# def retrieve(request, pk=None):
+#         print(pk)
 
-        booking = get_object_or_404(
-            Booking,
-            id=pk,
-            # created_by="none",
-            payment_status="reserved"
-        )
+#         booking = get_object_or_404(
+#             Booking,
+#             id=pk,
+#             # created_by="none",
+#             payment_status="reserved"
+#         )
 
-        order = client.order.create({
+#         order = client.order.create({
 
-            "amount": int(booking.amount * 100),
+#             "amount": int(booking.amount * 100),
 
-            "currency": "INR",
+#             "currency": "INR",
 
-            "receipt": str(booking.id)
+#             "receipt": str(booking.id)
 
-        })
+#         })
 
-        booking.razorpay_order_id = order["id"]
-        booking.save(update_fields=["razorpay_order_id"])
+#         booking.razorpay_order_id = order["id"]
+#         booking.save(update_fields=["razorpay_order_id"])
 
-        return render(
-            request,
-            "payments.html",
-            {
-                "booking": booking,
-                "order": order,
-                "key": RAZORPAY_KEY_ID,
-            },
-        )
+#         return render(
+#             request,
+#             "payments.html",
+#             {
+#                 "booking": booking,
+#                 "order": order,
+#                 "key": RAZORPAY_KEY_ID,
+#             },
+#         )
 
 
-class PaymentViewSet(ViewSet):
+# class PaymentViewSet(ViewSet):
 
-    @action(detail=False, methods=["post"])
+#     @action(detail=False, methods=["post"])
 
-    def verify(self, request):
+#     def verify(self, request):
 
-        booking = get_object_or_404(
+#         booking = get_object_or_404(
 
-            Booking,
+#             Booking,
 
-            id=request.data["booking_id"],
+#             id=request.data["booking_id"],
 
-            # created_by="none"  ,   #request.user,
+#             # created_by="none"  ,   #request.user,
 
-            payment_status="reserved"
+#             payment_status="reserved"
 
-        )
+#         )
 
-        params = {
+#         params = {
 
-            "razorpay_order_id":
-                request.data["razorpay_order_id"],
+#             "razorpay_order_id":
+#                 request.data["razorpay_order_id"],
 
-            "razorpay_payment_id":
-                request.data["razorpay_payment_id"],
+#             "razorpay_payment_id":
+#                 request.data["razorpay_payment_id"],
 
-            "razorpay_signature":
-                request.data["razorpay_signature"],
+#             "razorpay_signature":
+#                 request.data["razorpay_signature"],
 
-        }
+#         }
 
-        try:
+#         try:
 
-            client.utility.verify_payment_signature(params)
+#             client.utility.verify_payment_signature(params)
 
-        except razorpay.errors.SignatureVerificationError:
+#         except razorpay.errors.SignatureVerificationError:
 
-            return Response(
-                {
-                    "message":"Invalid Payment"
-                },
-                status=400
-            )
+#             return Response(
+#                 {
+#                     "message":"Invalid Payment"
+#                 },
+#                 status=400
+#             )
 
-        booking.payment_status="paid"
+#         booking.payment_status="paid"
 
-        booking.razorpay_payment_id=params["razorpay_payment_id"]
+#         booking.razorpay_payment_id=params["razorpay_payment_id"]
 
-        booking.razorpay_signature=params["razorpay_signature"]
+#         booking.razorpay_signature=params["razorpay_signature"]
 
-        # booking.updated_by="none"  #request.user
+#         # booking.updated_by="none"  #request.user
 
-        booking.save()
+#         booking.save()
 
-        send_payment_success_email.delay(
-            booking.created_by.email,
-            booking.created_by.first_name,
-            booking.event.title,
-            booking.ticket.name,
-            booking.selected_seats,
-            str(booking.amount),
-        )
+#         send_payment_success_email.delay(
+#             booking.created_by.email,
+#             booking.created_by.first_name,
+#             booking.event.title,
+#             booking.ticket.name,
+#             booking.selected_seats,
+#             str(booking.amount),
+#         )
 
-        return Response(
-            {
-                "message":"Payment Successful"
-            }
-        )
+#         return Response(
+#             {
+#                 "message":"Payment Successful"
+#             }
+#         )
 

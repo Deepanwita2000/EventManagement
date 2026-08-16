@@ -517,10 +517,32 @@ class CustomSearch(ViewSet):
 
 
 
+# showing popular events under featured section,displaying top 10 events
+class ViewPopularEvents(ViewSet):
 
+    def list(self, request):
+        popular_events = (
+            Event.objects
+            .filter(
+                is_popular=True,
+                status="active"
+            )
+            .select_related("category")
+            .order_by("-public_count")[:10]
+        )
 
+        serializer = EventSerializer(
+            popular_events,
+            many=True
+        )
 
-
+        return Response(
+            {
+                "success": True,
+                "message": "Featured events retrieved successfully.",
+                "data": serializer.data
+            }
+        )
 
 
 # class EventViewSet(ModelViewSet):
