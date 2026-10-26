@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f5f5f5;
+            padding: 40px 20px;
+        }
+
+        .payment-container {
+            max-width: 700px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .summary {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .summary h3 {
+            margin-bottom: 15px;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .row:last-child {
+            border-bottom: none;
+        }
+
+        .total {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .payment-method {
+            margin-bottom: 25px;
+        }
+
+        .payment-method h3 {
+            margin-bottom: 15px;
+        }
+
+        .option {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .option input {
+            margin-right: 10px;
+        }
+
+        .pay-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .pay-btn:hover {
+            background: #1d4ed8;
+        }
+        .payment-success {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.success-icon {
+    width: 75px;
+    height: 75px;
+    margin: 0 auto 15px;
+
+    background: #22c55e;
+    color: white;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 45px;
+    font-weight: bold;
+}
+.expired-icon {
+    width: 75px;
+    height: 75px;
+    margin: 0 auto 15px;
+
+    background: #ef4444;
+    color: white;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 40px;
+    font-weight: bold;
+}
+
+.payment-expired {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.payment-expired h2 {
+    color: #dc2626;
+    margin-bottom: 8px;
+}
+
+.payment-expired p {
+    color: #666;
+    font-size: 15px;
+}
+
+.payment-success h2 {
+    color: #16a34a;
+    margin-bottom: 8px;
+}
+
+.payment-success p {
+    color: #666;
+    font-size: 15px;
+}
+    </style>
+</head>
+
+<body>
+
+<div class="payment-container">
+
+    {% if context.payment_status == "paid" %}
+        <div class="payment-success">
+            <div class="success-icon">✓</div>
+            <h2>Payment Successful!</h2>
+            <p>Your payment has been completed successfully.</p>
+        </div>
+    {% elif context.payment_status == "expired" %}
+         <div class="payment-expired">
+        <div class="expired-icon">✕</div>
+        <h2>Payment Expired!</h2>
+        <p>Your booking has expired because the payment was not completed in time.</p>
+    </div>
+    {% else %}
+        <h2>Complete Your Payment</h2>
+    {% endif %}
+
+    <!-- Booking Summary -->
+
+            <div class="summary">
+
+                <h3>Booking Summary</h3>
+
+                <div class="row">
+                    <span>Event</span>
+                    <strong>{{ context.event }}</strong>
+                </div>
+
+                <div class="row">
+                    <span>Ticket Name</span>
+                    <strong>{{ context.ticket_name }}</strong>
+                </div>
+
+                <div class="row">
+                    <span>Number of Seats</span>
+                    <strong>{{ context.seats }}</strong>
+                </div>
+
+                <div class="row">
+                    <span>Ticket Price</span>
+                    <span>
+                        ₹{{ context.ticket_price }}
+                    </span>
+                </div>
+
+                <div class="row">
+                    <span>Discount</span>
+                    <span>
+                        {{ context.discount }}%
+                    </span>
+                </div>
+
+                <div class="row">
+                    <span>Tax</span>
+                    <span>
+                        {{ context.tax }}%
+                    </span>
+                </div>
+
+                <div class="row total">
+                    <span>Total Amount</span>
+                    <span>
+                        ₹{{ context.total_amount }}
+                    </span>
+                </div>
+
+            </div>
+
+            {% if context.payment_status != "paid" and context.payment_status != "expired"%}
+
+   
+
+
+                <button
+                    class="pay-btn"
+                    onclick="makePayment()">
+
+                    Pay ₹{{ context.total_amount }}
+
+                </button>
+                
+
+            {% endif %}
+
+
+
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+
+async function makePayment() {
+
+    const bookingId = "{{ context.booking_id }}";
+
+    try {
+
+        // Step 1:
+        // Ask Django to create Razorpay order
+
+        const response = await fetch(
+            "/logic/payment/create-order/",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                },
+
+                body: JSON.stringify({
+                    booking_id: bookingId
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(data.error || "Unable to create payment order.");
+            return;
+        }
+
+
+        // Step 2:
+        // Open Razorpay Checkout
+
+        const options = {
+
+            key: data.key_id,
+
+            amount: data.amount,
+
+            currency: data.currency,
+
+            name: "Event Management System",
+
+            description: "Event Ticket Payment",
+
+            order_id: data.order_id,
+
+
+            handler: async function (response) {
+
+                console.log(
+                    "Payment ID:",
+                    response.razorpay_payment_id
+                );
+
+                console.log(
+                    "Order ID:",
+                    response.razorpay_order_id
+                );
+
+                console.log(
+                    "Signature:",
+                    response.razorpay_signature
+                );
+
+
+                // Step 3:
+                // Send Razorpay response to Django
+                // for signature verification
+
+                const verifyResponse = await fetch(
+                    "/logic/payment/verify/",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+
+                        body: JSON.stringify({
+
+                            booking_id: bookingId,
+
+                            razorpay_payment_id:
+                                response.razorpay_payment_id,
+
+                            razorpay_order_id:
+                                response.razorpay_order_id,
+
+                            razorpay_signature:
+                                response.razorpay_signature
+
+                        })
+                    }
+                );
+
+
+                const verifyData =
+                    await verifyResponse.json();
+
+
+                if (verifyResponse.ok) {
+
+                    alert(
+                        "Payment successful! Your ticket will be sent to your email."
+                    );
+
+                    window.location.reload();
+
+                } else {
+
+                    alert(
+                        verifyData.error ||
+                        "Payment verification failed."
+                    );
+
+                }
+
+            },
+
+
+            prefill: {
+                name: "{{ context.first_name }}",
+                email: "{{ context.email }}"
+            },
+
+
+            theme: {
+                color: "#2563eb"
+            }
+
+        };
+
+
+        const razorpay =
+            new Razorpay(options);
+
+
+        razorpay.open();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Something went wrong while processing payment."
+        );
+
+    }
+
+}
+
+</script>
+
+
+
+</body>
+</html>
