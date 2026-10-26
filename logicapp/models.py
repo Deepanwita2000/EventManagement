@@ -135,31 +135,3 @@ class EventTicket(models.Model):
 
     def __str__(self):
         return self.ticket_number
-# class EventTicket(models.Model):
-#     booking = models.OneToOneField(
-#         Booking,
-#         on_delete=models.CASCADE,
-#         related_name="event_ticket"
-#     )
-
-#     ticket_number = models.CharField(
-#         max_length=30,
-#         unique=True
-#     )
-
-#     qr_code = models.ImageField(
-#         upload_to="tickets/qr/",
-#         null=True,
-#         blank=True
-#     )
-
-#     pdf = models.FileField(
-#         upload_to="tickets/pdf/",
-#         null=True,
-#         blank=True
-#     )
-
-#     created_at = models.DateTimeField(auto_now_add=True)
-
-#     def __str__(self):
-#         return self.ticket_number

@@ -43,6 +43,12 @@ class RegisterAPIView(APIView):
         return Response(serializer.data)
     
 class LoginAPIView(APIView):
+    """
+    {
+    "email":"abc@gmail.com",
+    "password":"password@12"
+    }
+    """
     permission_classes = [AllowAny] # anyone can login
     authentication_classes =[] # no authentication required for login -> JWTAuthentication is not given ,because this is not a protected route,means anyone can login
 
@@ -176,60 +182,5 @@ class ProfileCreateView(BaseClass):
             serializer.data,
             status=status.HTTP_200_OK
         )
-
-
-
-
-
-
-
-
-# class ProfileViewSet(ModelViewSet):
-#     queryset:QuerySet = MyProfile.objects.all()
-#     serializer_class=ProfileSerializer
-#     authentication_classes = [JWTAuthentication]
-#     permission_classes = [IsAuthenticated]
-
-#     def perform_create(self ,serializer):
-#         user = self.request.user
-#         print("Inside perform_create -> ",user.first_name)
-#         if user.role != 'organizer':
-#             raise PermissionDenied("Only organizers can access profile")
-#         # print(serializer.data)
-#         # prevent duplicate event title
-#         # profile_id = serializer.data.get('gender')
-#         # print(f"Creating event with title :{profile_id},{profile_id.id} for user: {user}")
-
-#         if MyProfile.objects.filter(organizer=user).exists():
-#             raise exceptions.ValidationError("Account already exists")
-        
-#         serializer.save(organizer=user)
-
-#     # Edit a course - Only the professor who created it
-#     def perform_update(self, serializer):
-#         myProfile = self.get_object()      # This will get the course instance being updated from queryset = Course.objects.all() 
-#         user = self.request.user
-
-#         print(f'User details: {user}')
-
-#         if user.role != 'organizer' or myProfile.organizer != user:
-#             raise PermissionDenied("You can only update your own profile.")
-#         serializer.save()
-
-#     @action(detail=False , methods=['get'],url_path='my-profile' , permission_classes=[IsOrganizer])
-#     def my_profile(self, request):
-#         user = request.user
-#         if user.role != 'organizer':
-#             raise PermissionDenied("Only you can see your own created events")
-#         # org_email = serializer.
-#         try:
-#              my_profile = MyProfile.objects.get(organizer=user)
-#         except MyProfile.DoesNotExist:
-#             return Response({"detail": "Profile not found"}, status=404)
-#         serializer = self.get_serializer(my_profile)
-#         print(serializer)
-#         return Response(serializer.data)
-
-    
 
 

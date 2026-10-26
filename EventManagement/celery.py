@@ -23,7 +23,7 @@ from celery.schedules import crontab
 app.conf.beat_schedule = {
     "expire-pending-bookings": {
         "task": "logicapp.tasks.expire_bookings",
-         "schedule": crontab(minute="*/1")
+         "schedule": crontab(minute="*/2")
     },
     "update-popular-events-every-5-minutes": {
         "task": "eventapp.tasks.update_popular_events",
@@ -31,6 +31,6 @@ app.conf.beat_schedule = {
     },
     "update-expired-events-every-5-minutes": {
         "task": "eventapp.tasks.update_expired_events",
-        "schedule": 300.0,  # Every 5 minutes
+        "schedule": crontab(minute="*/5"),  # Every 5 minutes  , will check for if the event is active or not
     },
 }

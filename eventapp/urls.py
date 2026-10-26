@@ -6,7 +6,7 @@ router = SimpleRouter()
 router.register("api", CreateEventViewSet, basename="events") # event/api/
 router.register("all-events", AllEvents, basename="all-events") # event/all-events/
 router.register("filter-events", FilterEvents, basename="filter-events") # event/filter-events/
-router.register("custom-search", CustomSearch, basename="custom-search") # event/custom-search/
+router.register("text-search", CustomSearch, basename="custom-search") # event/text-search/
 
 urlpatterns = [
     path("", include(router.urls)),  # event/

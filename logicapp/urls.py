@@ -4,19 +4,16 @@ from rest_framework.routers import SimpleRouter
 
 router = SimpleRouter()
 router.register('ticket', views.TicketViewSet , basename='ticket-logic')   # logic/ticket/
+router.register('ticket-tiers', views.ShowTicket , basename='tickets-ticket-tiers')   # logic/ticket-tiers/
+router.register('ticket-info', views.ShowTicketDetails , basename='tickets-ticket-info')   # logic/ticket-info/
 router.register('booking', views.BookingViewSet,basename="api-booking") # /logic/booking/
-router.register('payment', views.MakePayment,basename="make-paymnet") # /logic/payment/
-
-# router.register('booking', views.MakePayment,basename="make-paymnet") # /logic/payment/
-# router.register("payment",  views.PaymentViewSet, basename="payment") # for ui
-
 
 urlpatterns = [
      path('',include(router.urls)) ,
-#      path(
-#     "payment/<int:pk>/",
-#     views.retrieve,
-#     name="payment-page",
-# )
+
+     # ========== UI ========== #
+     path("pay/", views.payment_page, name="payment-page"),
+     path("payment/create-order/",  views.create_payment_order,  name="create-payment-order" ),
+     path("payment/verify/",views.verify_payment,name="verify-payment"),
     ]
 

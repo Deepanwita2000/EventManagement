@@ -2,6 +2,7 @@ from rest_framework import serializers
 from eventapp.models import Event, PortraitImage,LandscapeImage,Category
 # from category.models import Category
 from datetime import date,datetime
+from rest_framework import serializers
 
 class LandscapeSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
@@ -36,17 +37,6 @@ class PortraitSerializer(serializers.ModelSerializer):
     
                 return None
 
-
-
-
-
-
-
-
-
-
-
-from rest_framework import serializers
 
 class EventSerializer(serializers.ModelSerializer):
     landscapes = LandscapeSerializer(many=True, read_only=True)

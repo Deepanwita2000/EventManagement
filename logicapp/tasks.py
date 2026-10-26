@@ -4,10 +4,17 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
 from django.db import transaction
-from logicapp.models import Booking, EventTicket,Event
-
-
-
+from logicapp.models import Booking, EventTicket
+import uuid
+from io import BytesIO
+from celery import shared_task
+from django.core.files.base import ContentFile
+from reportlab.platypus import SimpleDocTemplate,  Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from logicapp.models import Booking, EventTicket
+from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 
 
 @shared_task
@@ -67,59 +74,7 @@ def expire_bookings():
                 booking.event.title,
             )
 
-
-
-
-
-
-@shared_task
-def send_booking_confirmation_email(
-    user_email,
-    first_name,
-    event_title,
-    ticket_name,
-    seats,
-    amount,
-):
-    print("send_booking_confirmation_email()....")
-    subject = "Booking Reserved"
-    print(subject)
-
-    message = f"""
-Hi {first_name},
-
-Your booking request has been received.
-
-Event : {event_title}
-Ticket : {ticket_name}
-Seats  : {seats}
-Amount : ₹{amount}
-
-Your seats are reserved for the next 1 hour.
-
-Please complete your payment before the reservation expires.
-
-Regards,
-Event Management Team
-"""
-    print(message)
-
-    send_mail(
-        subject,
-        message,
-        settings.DEFAULT_FROM_EMAIL,
-        [user_email],
-    )
-
-
-
-# logicapp/tasks.py
-
-from celery import shared_task
-from django.core.mail import send_mail
-from django.conf import settings
-
-
+# no use
 @shared_task
 def send_payment_success_email(
     user_email,
@@ -163,35 +118,9 @@ Event Management Team
         fail_silently=False,
     )
 
-
-
-
-
-
-
-
 #////////////////////////////////////////////////////// ticket generation
 
-
-
-import uuid
-from io import BytesIO
-
-from celery import shared_task
-from django.core.files.base import ContentFile
-
-from reportlab.platypus import (
-    SimpleDocTemplate,
-    Paragraph,
-    Spacer
-)
-
-from reportlab.lib.styles import getSampleStyleSheet
-
-from logicapp.models import Booking, EventTicket
-from django.core.mail import EmailMessage
-from django.conf import settings
-
+# keep it
 @shared_task
 def generate_ticket(booking_id):
     print("generate_ticket()....")
@@ -356,3 +285,72 @@ def generate_ticket(booking_id):
     email.send()
 
     # return f"{ticket_number} generated successfully."
+
+# keep it
+@shared_task
+def send_booking_confirmation_email(user_email,first_name,event_title,ticket_name,seats,amount,booking_id):
+    print("send_booking_confirmation_email()....")
+    print(settings.EMAIL_HOST)
+    print(settings.EMAIL_PORT)
+    print(settings.EMAIL_HOST_USER)
+    print(bool(settings.EMAIL_HOST_PASSWORD))
+    print(settings.EMAIL_USE_TLS)
+    print(settings.DOMAIN)
+    subject = "Booking Reserved"
+    # Payment page URL
+    payment_url = (f"{settings.DOMAIN}/logic/pay/?booking_id={booking_id}")
+    # Data to send to HTML template
+    context = {
+        "first_name": first_name,
+        "event_title": event_title,
+        "ticket_name": ticket_name,
+        "seats": seats,
+        "amount": amount,
+        "payment_url": payment_url,
+    }
+
+    # Load HTML template
+    html_message = render_to_string(
+        "logic/pay_info.html",
+        context
+    )
+
+    # Plain-text fallback
+    text_message = f"""
+Hi {first_name},
+
+Your booking request has been received.
+
+Event  : {event_title}
+Ticket : {ticket_name}
+Seats  : {seats}
+Amount : ₹{amount}
+
+Your seats are reserved for the next 1 hour.
+
+Please complete your payment using the payment link:
+{payment_url}
+
+Regards,
+Event Management Team
+"""
+
+    # Create email
+    email = EmailMultiAlternatives(
+        subject=subject,
+        body=text_message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[user_email],
+    )
+
+    # Attach HTML version
+    email.attach_alternative(
+        html_message,
+        "text/html"
+    )
+
+    # Send email
+    email.send()
+
+    print("Booking confirmation email sent.")
+
